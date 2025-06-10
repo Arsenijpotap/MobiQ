@@ -2,83 +2,126 @@
 import { useEffect, useRef, useState } from "react";
 import Device from "./device";
 import './style.scss'
-export default function () {
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  let allref = useRef<HTMLDivElement>(null)
-  interface LocalData {
-    [key: string]: string;
-  }
-  let [max,setMax] = useState(Math.ceil(window.innerWidth / 610))
-  console.log(max)
-  let [text, setText] = useState('https://nextjs.org/')
-  let [count, setCount] = useState(1)
-  if (!localStorage.getItem('deviceArr')) {
-    
-  }
-  let deviceArr = []
-let widthK = 15
-  let localCount = parseInt(localStorage.getItem("deviceCount") || "1")||count
-  for (let i = 0; i <localCount; i++) {
-    deviceArr.push(i + 1)
-  }
+
+export default function Home() {
+  const [isMobile, setIsMobile] = useState(false);
+  const [max, setMax] = useState(0);
+  const [text, setText] = useState('https://nextjs.org/');
+  const [count, setCount] = useState(1);
+  const allref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    window?.addEventListener('resize', () => {setMax(Math.ceil(window.innerWidth / 610)) })
-    setCount(localCount)
-    if (!localStorage.getItem("deviceCount")) {
-        
-      localStorage.setItem("deviceCount", count.toString())
+    // Проверяем, что мы находимся на клиенте
+    if (typeof window !== 'undefined') {
+      const mobileCheck = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      setIsMobile(mobileCheck);
+      setMax(Math.ceil(window.innerWidth / 610));
+
+      const handleResize = () => {
+        setMax(Math.ceil(window.innerWidth / 610));
+      };
+
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+      };
     }
-    if (!localStorage.getItem("deviceArr")) {
-        
-      localStorage.setItem("deviceArr", '{}')
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const localCount = parseInt(localStorage.getItem("deviceCount") || "1") || count;
+      setCount(localCount);
+
+      if (!localStorage.getItem("deviceCount")) {
+        localStorage.setItem("deviceCount", count.toString());
+      }
+
+      if (!localStorage.getItem("deviceArr")) {
+        localStorage.setItem("deviceArr", '{}');
+      }
     }
-    const savedData = localStorage.getItem("deviceCount");
-    
-    
-})
-  
-  return (<>
-    <header>
-      <p className="logo">MobiQ</p>
-      <div className="header__group">
-        <p className="header__text">Check your website responsiveness</p>
-        {!isMobile? <input placeholder="Enter your url" onChange={
-                (e) => {
-                  if (e.target) {
-                    console.log(e.target.value)
-                    if (e.target.value != null &&e.target.value != '/') {
-                      setText(e.target.value)
-                    }
-                  }
-        }} name="area" id="textArea" />:''}</div></header>
+  }, [count]);
+
+  const deviceArr = [];
+  const widthK = 15;
+  const localCount = typeof window !== 'undefined' ? parseInt(localStorage.getItem("deviceCount") || "1") || count : count;
+
+  for (let i = 0; i < localCount; i++) {
+    deviceArr.push(i + 1);
+  }
+
+  return (
+    <>
+      <header>
+        <p className="logo">MobiQ</p>
+        <div className="header__group">
+          <p className="header__text">Check your website responsiveness</p>
+          {!isMobile ? (
+            <input
+              placeholder="Enter your url"
+              onChange={(e) => {
+                if (e.target && e.target.value != null && e.target.value !== '/') {
+                  setText(e.target.value);
+                }
+              }}
+              name="area"
+              id="textArea"
+            />
+          ) : null}
+        </div>
+      </header>
       <main>
-      {!isMobile?(<div className="all" ref={allref}
-        style={{
-          paddingLeft: (window.innerWidth/widthK),
-          paddingRight: (window.innerWidth/widthK)
-          
-        }}
-      >
-      
-      
-      {deviceArr.map((value) => {return<Device allRef={allref} count={count}  setCount={setCount}  num={value} key={value} src={text}></Device>})}
-    
-        <button onClick={() => {
-          if (allref.current) {
-            allref.current.classList.add('opacity')
-          }
-          setTimeout(() => {
-            
-            setCount((c) => count + 1)
-            localStorage.setItem("deviceCount", (count + 1).toString())
-            if (allref.current) {
-              allref.current.classList.remove('opacity')
-            }
-          },500)
-        }} className="plus"  style={{ right: count >= max ? -50 :50, opacity: count == max ? '0' : '1' }}>⮾</button>
-</div>):<div className="all"><br/><br/><br/><p className="all__text">К сожалению, мобильные устройства не поддерживаются</p></div>}
-  </main>
-  
-  </>)
+        {!isMobile ? (
+          <div
+            className="all"
+            ref={allref}
+            style={{
+              paddingLeft: typeof window !== 'undefined' ? window.innerWidth / widthK : 0,
+              paddingRight: typeof window !== 'undefined' ? window.innerWidth / widthK : 0,
+            }}
+          >
+            {deviceArr.map((value) => (
+              <Device
+                allRef={allref}
+                count={count}
+                setCount={setCount}
+                num={value}
+                key={value}
+                src={text}
+              />
+            ))}
+            <button
+              onClick={() => {
+                if (allref.current) {
+                  allref.current.classList.add('opacity');
+                }
+                setTimeout(() => {
+                  setCount((c) => c + 1);
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem("deviceCount", (count + 1).toString());
+                  }
+                  if (allref.current) {
+                    allref.current.classList.remove('opacity');
+                  }
+                }, 500);
+              }}
+              className="plus"
+              style={{ right: count >= max ? -50 : 50, opacity: count === max ? '0' : '1' }}
+            >
+              ⮾
+            </button>
+          </div>
+        ) : (
+          <div className="all">
+            <br />
+            <br />
+            <br />
+            <p className="all__text">К сожалению, мобильные устройства не поддерживаются</p>
+          </div>
+        )}
+      </main>
+    </>
+  );
 }
